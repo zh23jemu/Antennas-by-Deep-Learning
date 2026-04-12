@@ -3,9 +3,11 @@ from __future__ import annotations
 import numpy as np
 from sklearn.pipeline import Pipeline
 
+from antenna_ml.scoring import s_parameter_objective
+
 
 def score_s_curve(s_curve: np.ndarray) -> float:
-    return float(np.min(s_curve))
+    return s_parameter_objective(s_curve)
 
 
 def random_search(

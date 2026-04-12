@@ -7,6 +7,7 @@ import numpy as np
 
 from antenna_ml.io import write_json
 from antenna_ml.model import load_model
+from antenna_ml.plotting import plot_s_curve
 
 
 def parse_args() -> argparse.Namespace:
@@ -14,6 +15,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--model", type=Path, default=Path("outputs") / "antenna_mlp.joblib")
     parser.add_argument("--dimensions", required=True, help="逗号分隔的尺寸参数，例如 1,2,3")
     parser.add_argument("--output", type=Path, default=Path("outputs") / "prediction.json")
+    parser.add_argument("--plot", type=Path, default=Path("outputs") / "prediction_s_curve.png")
     return parser.parse_args()
 
 
@@ -41,8 +43,10 @@ def main() -> None:
             "best_point_index": best_index,
         },
     )
+    plot_s_curve(prediction, args.plot, "Predicted S Parameter Curve")
     print(f"预测完成，最低 S 参数值: {best_value:.6g}，采样点索引: {best_index}")
     print(f"结果已保存: {args.output}")
+    print(f"曲线图已保存: {args.plot}")
 
 
 if __name__ == "__main__":

@@ -30,7 +30,7 @@ python -m venv .venv
 .\.venv\Scripts\python.exe predict.py --dimensions "1,2,3,4,5,6,7,8,9,10,11"
 ```
 
-结果保存到 `outputs/prediction.json`。
+结果保存到 `outputs/prediction.json`，曲线图保存到 `outputs/prediction_s_curve.png`。
 
 ## 优化
 
@@ -39,3 +39,15 @@ python -m venv .venv
 ```
 
 优化脚本会在训练数据尺寸范围内随机搜索，目标是让预测 S 参数最小，结果保存到 `outputs/best_design.json`。
+
+默认还会生成 `outputs/best_design_s_curve.png`，可用于论文或报告中展示优化尺寸对应的预测 S 参数曲线。
+
+## 后续扩展：增益和效率
+
+当前优化目标只使用 S 参数。代码中已经预留 `antenna_ml/scoring.py`，后续增益和效率数据跑完后，可以把模型输出扩展为 S 参数、增益、效率三个目标，并使用综合评分：
+
+```text
+综合评分 = S参数目标 - 增益权重 * 增益 - 效率权重 * 效率
+```
+
+评分越低代表设计越好。这样可以保持“低 S 参数、高增益、高效率”的统一优化方向。
