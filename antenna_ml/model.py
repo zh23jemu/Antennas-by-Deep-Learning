@@ -20,6 +20,9 @@ class TrainingResult:
     y_train_shape: tuple[int, int]
     x_valid_shape: tuple[int, int]
     y_valid_shape: tuple[int, int]
+    x_valid: np.ndarray
+    y_valid: np.ndarray
+    y_pred: np.ndarray
 
 
 def build_model(random_state: int, max_iter: int) -> Pipeline:
@@ -77,6 +80,9 @@ def train_model(
         y_train_shape=y_train.shape,
         x_valid_shape=x_valid.shape,
         y_valid_shape=y_valid.shape,
+        x_valid=x_valid,
+        y_valid=y_valid,
+        y_pred=y_pred,
     )
 
 

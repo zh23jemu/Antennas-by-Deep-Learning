@@ -17,10 +17,15 @@ python -m venv .venv
 .\.venv\Scripts\python.exe train.py
 ```
 
+默认训练轮数为 `500`。如需更快试跑，可手动传入更小的 `--max-iter`。
+
 训练后会生成：
 
 - `outputs/antenna_mlp.joblib`
 - `outputs/training_summary.json`
+- `outputs/validation_plots/validation_compare_*.png`
+
+训练阶段会默认从验证集中抽取若干样本，生成“真实 S 参数 vs 预测 S 参数”对比图，方便快速判断模型拟合效果。
 
 ## 预测
 
@@ -41,6 +46,20 @@ python -m venv .venv
 优化脚本会在训练数据尺寸范围内随机搜索，目标是让预测 S 参数最小，结果保存到 `outputs/best_design.json`。
 
 默认还会生成 `outputs/best_design_s_curve.png`，可用于论文或报告中展示优化尺寸对应的预测 S 参数曲线。
+
+## 一键运行
+
+```powershell
+.\.venv\Scripts\python.exe run_all.py
+```
+
+这个脚本会自动完成：
+
+- 训练模型
+- 生成验证集真实/预测对比图
+- 搜索最优尺寸
+- 生成优化曲线图
+- 使用最优尺寸再次预测并生成预测曲线图
 
 ## 后续扩展：增益和效率
 
