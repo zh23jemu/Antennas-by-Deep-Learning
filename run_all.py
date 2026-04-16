@@ -58,7 +58,7 @@ def main() -> None:
             "--output",
             str(args.output_dir / "best_design.json"),
             "--plot",
-            str(args.output_dir / "best_design_s_curve.png"),
+            str(args.output_dir / "best_design_features.png"),
             "--n-candidates",
             str(args.n_candidates),
             "--random-state",
@@ -79,7 +79,7 @@ def main() -> None:
             "--output",
             str(args.output_dir / "prediction.json"),
             "--plot",
-            str(args.output_dir / "prediction_s_curve.png"),
+            str(args.output_dir / "prediction_features.png"),
         ]
     )
 

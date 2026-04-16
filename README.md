@@ -1,6 +1,6 @@
 # 基于深度学习的小型天线快速设计与优化
 
-本项目提供一个最小可用流程：读取天线尺寸和 S 参数样本，训练 MLP 代理模型，预测给定尺寸的 S 参数，并搜索预测 S 参数最优的天线尺寸。
+本项目提供一个最小可用流程：读取天线尺寸和 S 参数样本，训练 MLP 代理模型，预测给定尺寸下的关键 S 参数特征，并搜索预测最小 S 参数最优的天线尺寸。
 
 ## 环境
 
@@ -25,7 +25,7 @@ python -m venv .venv
 - `outputs/training_summary.json`
 - `outputs/validation_plots/validation_compare_*.png`
 
-训练阶段会默认从验证集中抽取若干样本，生成“真实 S 参数 vs 预测 S 参数”对比图，方便快速判断模型拟合效果。
+训练阶段会默认从验证集中抽取若干样本，生成“真实特征 vs 预测特征”对比图，方便快速判断模型拟合效果。
 
 ## 预测
 
@@ -35,7 +35,7 @@ python -m venv .venv
 .\.venv\Scripts\python.exe predict.py --dimensions "1,2,3,4,5,6,7,8,9,10,11"
 ```
 
-结果保存到 `outputs/prediction.json`，曲线图保存到 `outputs/prediction_s_curve.png`。
+结果保存到 `outputs/prediction.json`，特征图保存到 `outputs/prediction_features.png`。
 
 ## 优化
 
@@ -45,7 +45,7 @@ python -m venv .venv
 
 优化脚本会在训练数据尺寸范围内随机搜索，目标是让预测 S 参数最小，结果保存到 `outputs/best_design.json`。
 
-默认还会生成 `outputs/best_design_s_curve.png`，可用于论文或报告中展示优化尺寸对应的预测 S 参数曲线。
+默认还会生成 `outputs/best_design_features.png`，用于展示优化尺寸对应的关键 S 参数特征。
 
 ## 一键运行
 
@@ -58,8 +58,8 @@ python -m venv .venv
 - 训练模型
 - 生成验证集真实/预测对比图
 - 搜索最优尺寸
-- 生成优化曲线图
-- 使用最优尺寸再次预测并生成预测曲线图
+- 生成优化特征图
+- 使用最优尺寸再次预测并生成预测特征图
 
 ## 后续扩展：增益和效率
 

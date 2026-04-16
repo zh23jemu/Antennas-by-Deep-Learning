@@ -9,66 +9,45 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
 
-def plot_s_curve(s_values: np.ndarray, output_path: Path, title: str) -> None:
+def plot_true_vs_predicted_feature_curves(
+    true_features: np.ndarray,
+    predicted_features: np.ndarray,
+    output_path: Path,
+    title: str,
+) -> None:
     output_path.parent.mkdir(parents=True, exist_ok=True)
-    point_indices = np.arange(s_values.size)
-    best_index = int(np.argmin(s_values))
-    best_value = float(s_values[best_index])
+    labels = ["min_s_value", "min_point_index", "mean_s_value", "std_s_value"]
+    x = np.arange(len(labels))
+    width = 0.35
 
     plt.figure(figsize=(9, 5), dpi=160)
-    plt.plot(point_indices, s_values, color="#1f5f8b", linewidth=2.0, label="Predicted S parameter")
-    plt.scatter([best_index], [best_value], color="#d1495b", zorder=3, label="Minimum point")
-    plt.axvline(best_index, color="#d1495b", linestyle="--", linewidth=1.0, alpha=0.7)
+    plt.bar(x - width / 2, true_features, width=width, color="#1f5f8b", label="True")
+    plt.bar(x + width / 2, predicted_features, width=width, color="#d1495b", label="Predicted")
+    plt.xticks(x, labels, rotation=15)
     plt.title(title)
-    plt.xlabel("Sample point index")
-    plt.ylabel("S parameter value")
-    plt.grid(True, linestyle="--", linewidth=0.6, alpha=0.45)
+    plt.ylabel("Feature value")
+    plt.grid(True, axis="y", linestyle="--", linewidth=0.6, alpha=0.45)
     plt.legend()
     plt.tight_layout()
     plt.savefig(output_path)
     plt.close()
 
 
-def plot_true_vs_predicted_s_curve(
-    true_s_values: np.ndarray,
-    predicted_s_values: np.ndarray,
+def plot_predicted_feature_summary(
+    predicted_features: np.ndarray,
     output_path: Path,
     title: str,
 ) -> None:
     output_path.parent.mkdir(parents=True, exist_ok=True)
-    point_indices = np.arange(true_s_values.size)
-    true_best_index = int(np.argmin(true_s_values))
-    pred_best_index = int(np.argmin(predicted_s_values))
+    labels = ["min_s_value", "min_point_index", "mean_s_value", "std_s_value"]
+    x = np.arange(len(labels))
 
     plt.figure(figsize=(9, 5), dpi=160)
-    plt.plot(point_indices, true_s_values, color="#1f5f8b", linewidth=2.0, label="True S parameter")
-    plt.plot(
-        point_indices,
-        predicted_s_values,
-        color="#d1495b",
-        linewidth=1.8,
-        linestyle="--",
-        label="Predicted S parameter",
-    )
-    plt.scatter(
-        [true_best_index],
-        [float(true_s_values[true_best_index])],
-        color="#1f5f8b",
-        zorder=3,
-        label="True minimum",
-    )
-    plt.scatter(
-        [pred_best_index],
-        [float(predicted_s_values[pred_best_index])],
-        color="#d1495b",
-        zorder=3,
-        label="Predicted minimum",
-    )
+    plt.bar(x, predicted_features, color=["#d1495b", "#edae49", "#1f5f8b", "#66a182"])
+    plt.xticks(x, labels, rotation=15)
     plt.title(title)
-    plt.xlabel("Sample point index")
-    plt.ylabel("S parameter value")
-    plt.grid(True, linestyle="--", linewidth=0.6, alpha=0.45)
-    plt.legend()
+    plt.ylabel("Feature value")
+    plt.grid(True, axis="y", linestyle="--", linewidth=0.6, alpha=0.45)
     plt.tight_layout()
     plt.savefig(output_path)
     plt.close()

@@ -1,17 +1,14 @@
 from __future__ import annotations
 
 import numpy as np
-from sklearn.pipeline import Pipeline
+from typing import Any
 
-from antenna_ml.scoring import s_parameter_objective
-
-
-def score_s_curve(s_curve: np.ndarray) -> float:
-    return s_parameter_objective(s_curve)
+def score_features(features: np.ndarray) -> float:
+    return float(features[0])
 
 
 def random_search(
-    model: Pipeline,
+    model: Any,
     lower_bounds: np.ndarray,
     upper_bounds: np.ndarray,
     n_candidates: int,
@@ -20,9 +17,9 @@ def random_search(
     rng = np.random.default_rng(random_state)
     candidates = rng.uniform(lower_bounds, upper_bounds, size=(n_candidates, lower_bounds.size))
     predictions = model.predict(candidates)
-    scores = predictions.min(axis=1)
+    scores = predictions[:, 0]
     best_index = int(np.argmin(scores))
     best_dimensions = candidates[best_index]
-    best_curve = predictions[best_index]
-    best_point_index = int(np.argmin(best_curve))
-    return best_dimensions, best_curve, float(scores[best_index]), best_point_index
+    best_features = predictions[best_index]
+    best_point_index = int(round(best_features[1]))
+    return best_dimensions, best_features, float(scores[best_index]), best_point_index

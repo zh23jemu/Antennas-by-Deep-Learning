@@ -5,10 +5,10 @@ from pathlib import Path
 
 import numpy as np
 
-from antenna_ml.data import default_data_paths, load_dataset, parameter_bounds
+from antenna_ml.data import decode_s_features, default_data_paths, extract_s_features, load_dataset, parameter_bounds
 from antenna_ml.io import write_json
 from antenna_ml.model import save_model, train_model
-from antenna_ml.plotting import plot_true_vs_predicted_s_curve
+from antenna_ml.plotting import plot_true_vs_predicted_feature_curves
 
 
 def parse_args() -> argparse.Namespace:
@@ -26,9 +26,10 @@ def main() -> None:
     args = parse_args()
     data_paths = default_data_paths(args.data_dir)
     dataset = load_dataset(data_paths)
+    targets = extract_s_features(dataset.s_values)
     result = train_model(
         dimensions=dataset.dimensions,
-        s_values=dataset.s_values,
+        targets=targets,
         random_state=args.random_state,
         max_iter=args.max_iter,
         test_size=args.test_size,
@@ -40,23 +41,27 @@ def main() -> None:
     compare_dir = args.output_dir / "validation_plots"
     compare_count = max(0, min(args.compare_count, result.y_valid.shape[0]))
     sample_indices = np.linspace(0, result.y_valid.shape[0] - 1, num=compare_count, dtype=int) if compare_count else np.array([], dtype=int)
+    decoded_y_valid = decode_s_features(result.y_valid, dataset.s_values.shape[1])
+    decoded_y_pred = decode_s_features(result.y_pred, dataset.s_values.shape[1])
 
     compare_records: list[dict[str, object]] = []
     for plot_number, sample_index in enumerate(sample_indices, start=1):
         plot_path = compare_dir / f"validation_compare_{plot_number}.png"
-        plot_true_vs_predicted_s_curve(
-            true_s_values=result.y_valid[sample_index],
-            predicted_s_values=result.y_pred[sample_index],
+        plot_true_vs_predicted_feature_curves(
+            true_features=decoded_y_valid[sample_index],
+            predicted_features=decoded_y_pred[sample_index],
             output_path=plot_path,
-            title=f"Validation Sample {plot_number}: True vs Predicted",
+            title=f"Validation Sample {plot_number}: Feature Comparison",
         )
         compare_records.append(
             {
                 "sample_index": int(sample_index),
                 "plot_path": str(plot_path),
                 "dimensions": result.x_valid[sample_index],
-                "true_min_s_value": float(result.y_valid[sample_index].min()),
-                "predicted_min_s_value": float(result.y_pred[sample_index].min()),
+                "true_min_s_value": float(decoded_y_valid[sample_index][0]),
+                "predicted_min_s_value": float(decoded_y_pred[sample_index][0]),
+                "true_min_point_index": int(decoded_y_valid[sample_index][1]),
+                "predicted_min_point_index": int(decoded_y_pred[sample_index][1]),
             }
         )
 
@@ -68,6 +73,7 @@ def main() -> None:
             "sample_count": dataset.dimensions.shape[0],
             "dimension_count": dataset.dimensions.shape[1],
             "s_parameter_points": dataset.s_values.shape[1],
+            "target_feature_names": ["min_s_value", "min_point_index", "mean_s_value", "std_s_value"],
             "x_train_shape": result.x_train_shape,
             "y_train_shape": result.y_train_shape,
             "x_valid_shape": result.x_valid_shape,

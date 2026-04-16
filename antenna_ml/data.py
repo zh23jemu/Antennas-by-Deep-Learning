@@ -18,6 +18,22 @@ class AntennaDataset:
     source_files: list[str]
 
 
+def extract_s_features(s_values: np.ndarray) -> np.ndarray:
+    min_values = np.min(s_values, axis=1)
+    max_index = max(1, s_values.shape[1] - 1)
+    min_indices = np.argmin(s_values, axis=1).astype(np.float64) / max_index
+    mean_values = np.mean(s_values, axis=1)
+    std_values = np.std(s_values, axis=1)
+    return np.column_stack((min_values, min_indices, mean_values, std_values))
+
+
+def decode_s_features(features: np.ndarray, s_point_count: int) -> np.ndarray:
+    decoded = np.asarray(features, dtype=np.float64).copy()
+    max_index = max(1, s_point_count - 1)
+    decoded[..., 1] = np.clip(np.rint(decoded[..., 1] * max_index), 0, max_index)
+    return decoded
+
+
 def _read_matrix(file_path: Path, key: str) -> np.ndarray:
     with h5py.File(file_path, "r") as handle:
         if key not in handle:
