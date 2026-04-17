@@ -13,7 +13,7 @@ from antenna_ml.plotting import plot_true_vs_predicted_feature_curves
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="训练小型天线 S 参数 MLP 代理模型")
-    parser.add_argument("--data-dir", type=Path, default=Path("样本数据"))
+    parser.add_argument("--data-dir", type=Path, action="append", dest="data_dirs")
     parser.add_argument("--output-dir", type=Path, default=Path("outputs"))
     parser.add_argument("--max-iter", type=int, default=500)
     parser.add_argument("--test-size", type=float, default=0.2)
@@ -24,7 +24,8 @@ def parse_args() -> argparse.Namespace:
 
 def main() -> None:
     args = parse_args()
-    data_paths = default_data_paths(args.data_dir)
+    data_dirs = args.data_dirs or [Path("样本数据")]
+    data_paths = default_data_paths(data_dirs)
     dataset = load_dataset(data_paths)
     targets = extract_s_features(dataset.s_values)
     result = train_model(
@@ -70,6 +71,9 @@ def main() -> None:
         {
             "source_files": dataset.source_files,
             "model_path": str(model_path),
+            "raw_sample_count": dataset.raw_sample_count,
+            "deduplicated_sample_count": dataset.deduplicated_sample_count,
+            "removed_duplicate_count": dataset.removed_duplicate_count,
             "sample_count": dataset.dimensions.shape[0],
             "dimension_count": dataset.dimensions.shape[1],
             "s_parameter_points": dataset.s_values.shape[1],
@@ -86,6 +90,10 @@ def main() -> None:
     )
 
     print("训练完成")
+    print("数据目录: " + ", ".join(str(path) for path in data_dirs))
+    print(f"原始样本数: {dataset.raw_sample_count}")
+    print(f"去重后样本数: {dataset.deduplicated_sample_count}")
+    print(f"去除重复样本数: {dataset.removed_duplicate_count}")
     print(f"样本数: {dataset.dimensions.shape[0]}")
     print(f"尺寸参数维度: {dataset.dimensions.shape[1]}")
     print(f"S参数采样点: {dataset.s_values.shape[1]}")

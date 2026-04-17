@@ -19,6 +19,12 @@ python -m venv .venv
 
 默认训练轮数为 `500`。如需更快试跑，可手动传入更小的 `--max-iter`。
 
+如果要同时读取多个数据目录，可以重复传入 `--data-dir`：
+
+```powershell
+.\.venv\Scripts\python.exe train.py --data-dir "样本数据" --data-dir "数据样本3"
+```
+
 训练后会生成：
 
 - `outputs/antenna_mlp.joblib`
@@ -52,6 +58,25 @@ python -m venv .venv
 ```powershell
 .\.venv\Scripts\python.exe run_all.py
 ```
+
+同样支持多个数据目录：
+
+```powershell
+.\.venv\Scripts\python.exe run_all.py --data-dir "样本数据" --data-dir "数据样本3"
+```
+
+## 数据覆盖分析
+
+```powershell
+.\.venv\Scripts\python.exe analyze_data_coverage.py --data-dir "样本数据" --data-dir "数据样本3"
+```
+
+该脚本会输出：
+
+- 重复最严重的参数组合
+- 去重前后样本数
+- 每个尺寸参数的覆盖范围
+- 每个参数当前最稀疏的取值和最大空缺区间
 
 这个脚本会自动完成：
 

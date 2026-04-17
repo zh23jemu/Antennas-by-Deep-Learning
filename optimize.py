@@ -15,7 +15,7 @@ from antenna_ml.plotting import plot_predicted_feature_summary
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="基于 MLP 代理模型搜索预测关键 S 参数特征最优的天线尺寸")
     parser.add_argument("--model", type=Path, default=Path("outputs") / "antenna_mlp.joblib")
-    parser.add_argument("--data-dir", type=Path, default=Path("样本数据"))
+    parser.add_argument("--data-dir", type=Path, action="append", dest="data_dirs")
     parser.add_argument("--output", type=Path, default=Path("outputs") / "best_design.json")
     parser.add_argument("--plot", type=Path, default=Path("outputs") / "best_design_features.png")
     parser.add_argument("--n-candidates", type=int, default=2000)
@@ -25,7 +25,8 @@ def parse_args() -> argparse.Namespace:
 
 def main() -> None:
     args = parse_args()
-    dataset = load_dataset(default_data_paths(args.data_dir))
+    data_dirs = args.data_dirs or [Path("样本数据")]
+    dataset = load_dataset(default_data_paths(data_dirs))
     lower_bounds, upper_bounds = parameter_bounds(dataset.dimensions)
     model = load_model(args.model)
     best_dimensions, best_features, best_score, best_point_index = random_search(

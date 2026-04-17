@@ -16,6 +16,9 @@ class AntennaDataset:
     dimensions: np.ndarray
     s_values: np.ndarray
     source_files: list[str]
+    raw_sample_count: int
+    deduplicated_sample_count: int
+    removed_duplicate_count: int
 
 
 def extract_s_features(s_values: np.ndarray) -> np.ndarray:
@@ -75,17 +78,40 @@ def load_dataset(data_paths: list[Path]) -> AntennaDataset:
         dimensions_list.append(dimensions)
         s_values_list.append(s_values)
 
+    all_dimensions = np.vstack(dimensions_list)
+    all_s_values = np.vstack(s_values_list)
+    raw_sample_count = int(all_dimensions.shape[0])
+
+    merged = np.hstack((all_dimensions, all_s_values))
+    _, unique_indices = np.unique(merged, axis=0, return_index=True)
+    unique_indices = np.sort(unique_indices)
+    unique_dimensions = all_dimensions[unique_indices]
+    unique_s_values = all_s_values[unique_indices]
+    deduplicated_sample_count = int(unique_dimensions.shape[0])
+
     return AntennaDataset(
-        dimensions=np.vstack(dimensions_list),
-        s_values=np.vstack(s_values_list),
+        dimensions=unique_dimensions,
+        s_values=unique_s_values,
         source_files=[str(path) for path in data_paths],
+        raw_sample_count=raw_sample_count,
+        deduplicated_sample_count=deduplicated_sample_count,
+        removed_duplicate_count=raw_sample_count - deduplicated_sample_count,
     )
 
 
-def default_data_paths(data_dir: Path) -> list[Path]:
-    paths = sorted(data_dir.glob("*.h5"))
+def default_data_paths(data_dirs: list[Path]) -> list[Path]:
+    paths: list[Path] = []
+    missing_dirs: list[str] = []
+    for data_dir in data_dirs:
+        if not data_dir.exists():
+            missing_dirs.append(str(data_dir))
+            continue
+        paths.extend(sorted(data_dir.glob("*.h5")))
+    if missing_dirs:
+        raise FileNotFoundError(f"以下数据目录不存在: {', '.join(missing_dirs)}")
     if not paths:
-        raise FileNotFoundError(f"未在 {data_dir} 中找到 .h5 数据文件")
+        joined = ", ".join(str(path) for path in data_dirs)
+        raise FileNotFoundError(f"未在这些目录中找到 .h5 数据文件: {joined}")
     return paths
 
 
