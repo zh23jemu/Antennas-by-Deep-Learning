@@ -86,6 +86,25 @@ python -m venv .venv
 
 该脚本会把另一种天线的 HFSS 导出 Excel 数据整理为“每组尺寸一行”的训练格式，并提取第一版 S11 与增益特征。
 
+## 新天线专用训练与优化
+
+```powershell
+.\.venv\Scripts\python.exe run_new_antenna.py --s11-file data1.xlsx --gain-file data2.xlsx
+```
+
+该流程会完成：
+
+- 整理 Excel 数据
+- 训练新天线专用 MLP 模型
+- 按 `S11 + 增益` 联合目标搜索最优尺寸
+- 输出预测结果与特征图
+
+如果要同时比较多套权重方案：
+
+```powershell
+.\.venv\Scripts\python.exe compare_new_antenna_weights.py
+```
+
 这个脚本会自动完成：
 
 - 训练模型
