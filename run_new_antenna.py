@@ -9,8 +9,8 @@ from pathlib import Path
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="一键完成新天线数据整理、训练、优化和预测")
-    parser.add_argument("--s11-file", type=Path, default=Path("data1.xlsx"))
-    parser.add_argument("--gain-file", type=Path, default=Path("data2.xlsx"))
+    parser.add_argument("--s11-file", type=Path, action="append", dest="s11_files")
+    parser.add_argument("--gain-file", type=Path, action="append", dest="gain_files")
     parser.add_argument("--dataset-dir", type=Path, default=Path("outputs") / "new_antenna_dataset")
     parser.add_argument("--model-dir", type=Path, default=Path("outputs") / "new_antenna_model")
     parser.add_argument("--max-iter", type=int, default=800)
@@ -31,19 +31,20 @@ def run_command(args: list[str]) -> None:
 def main() -> None:
     args = parse_args()
     python_executable = sys.executable
+    s11_files = args.s11_files or [Path("data1.xlsx")]
+    gain_files = args.gain_files or [Path("data2.xlsx")]
 
-    run_command(
-        [
-            python_executable,
-            "prepare_new_antenna_dataset.py",
-            "--s11-file",
-            str(args.s11_file),
-            "--gain-file",
-            str(args.gain_file),
-            "--output-dir",
-            str(args.dataset_dir),
-        ]
-    )
+    prepare_command = [
+        python_executable,
+        "prepare_new_antenna_dataset.py",
+        "--output-dir",
+        str(args.dataset_dir),
+    ]
+    for path in s11_files:
+        prepare_command.extend(["--s11-file", str(path)])
+    for path in gain_files:
+        prepare_command.extend(["--gain-file", str(path)])
+    run_command(prepare_command)
 
     features_csv = args.dataset_dir / "features.csv"
     run_command(

@@ -1,6 +1,12 @@
 # 第二种天线最终交付说明
 
-本交付版针对 `data1.xlsx + data2.xlsx` 这一类新天线数据，已经完成：
+本交付版针对第二种天线数据，已经合并：
+
+- `data1.xlsx`
+- `data2.xlsx`
+- `仿的数据` 文件夹中的新增 S 参数与增益 Excel
+
+并完成：
 
 - Excel 数据整理
 - S11 与增益关键特征提取
@@ -10,9 +16,10 @@
 
 ## 一、数据说明
 
-- `data1.xlsx`：S11 数据
-- `data2.xlsx`：增益数据
-- 当前共同尺寸样本数：`1661`
+- `data1.xlsx`：原始 S11 数据
+- `data2.xlsx`：原始增益数据
+- `仿的数据`：新增 HFSS 导出数据
+- 当前共同尺寸样本数：`5314`
 - 输入尺寸参数数：`8`
 
 尺寸参数为：
@@ -52,8 +59,8 @@
 
 当前模型验证结果：
 
-- 验证集 `MSE`：`0.152661`
-- 验证集 `MAE`：`0.0673299`
+- 验证集 `MSE`：`0.80147`
+- 验证集 `MAE`：`0.207635`
 
 ## 四、当前推荐结果
 
@@ -64,13 +71,13 @@
 推荐尺寸：
 
 ```text
-2.05565, 18.8482, 1.87343, 75, 76.9033, 1.47073, 70.3247, 79.1580
+2.57017, 16.8272, 2.97328, 157.277, 77.3126, 1.27523, 90.9747, 77.229
 ```
 
 对应预测结果：
 
-- `s11_min_db ≈ -24.3014`
-- `gain_max ≈ 0.302417`
+- `s11_min_db ≈ -29.1408`
+- `gain_max ≈ 1.13158`
 
 ### 2. 多权重方案
 
@@ -82,12 +89,24 @@
 
 可以根据需求选择对应尺寸方案。
 
+当前三套方案的典型结果为：
+
+- `S11优先`
+  - `s11_min_db ≈ -29.1408`
+  - `gain_max ≈ 1.13158`
+- `均衡`
+  - `s11_min_db ≈ -29.1408`
+  - `gain_max ≈ 1.13158`
+- `增益优先`
+  - `s11_min_db ≈ -20.1034`
+  - `gain_max ≈ 1.34519`
+
 ## 五、运行方式
 
 ### 1. 一键运行
 
 ```powershell
-.\.venv\Scripts\python.exe run_new_antenna.py --s11-file data1.xlsx --gain-file data2.xlsx
+.\.venv\Scripts\python.exe run_new_antenna.py --s11-file data1.xlsx --s11-file "C:\Coding\Antennas-by-Deep-Learning\仿的数据\S Parameter Plot 1.xlsx" --s11-file "C:\Coding\Antennas-by-Deep-Learning\仿的数据\S Parameter Plot 2.xlsx" --s11-file "C:\Coding\Antennas-by-Deep-Learning\仿的数据\S Parameter Plot 3.xlsx" --s11-file "C:\Coding\Antennas-by-Deep-Learning\仿的数据\S Parameter Plot 4.xlsx" --gain-file data2.xlsx --gain-file "C:\Coding\Antennas-by-Deep-Learning\仿的数据\Gain Plot 01.xlsx" --gain-file "C:\Coding\Antennas-by-Deep-Learning\仿的数据\Gain Plot 02.xlsx" --gain-file "C:\Coding\Antennas-by-Deep-Learning\仿的数据\Gain Plot 03.xlsx" --gain-file "C:\Coding\Antennas-by-Deep-Learning\仿的数据\Gain Plot 4.xlsx"
 ```
 
 ### 2. 只比较不同权重方案

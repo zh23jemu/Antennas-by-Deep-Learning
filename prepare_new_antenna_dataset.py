@@ -29,14 +29,18 @@ GAIN_VALUE_COLUMN = "GainTotal []"
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="整理新天线 Excel 数据并提取第一版 S11 + 增益特征")
-    parser.add_argument("--s11-file", type=Path, default=Path("data1.xlsx"))
-    parser.add_argument("--gain-file", type=Path, default=Path("data2.xlsx"))
+    parser.add_argument("--s11-file", type=Path, action="append", dest="s11_files")
+    parser.add_argument("--gain-file", type=Path, action="append", dest="gain_files")
     parser.add_argument("--output-dir", type=Path, default=Path("outputs") / "new_antenna_dataset")
     return parser.parse_args()
 
 
 def build_s11_features(s11_group: pd.DataFrame) -> tuple[dict[str, float], np.ndarray]:
-    ordered = s11_group.sort_values(S11_FREQ_COLUMN)
+    ordered = (
+        s11_group
+        .sort_values(S11_FREQ_COLUMN)
+        .drop_duplicates(subset=[S11_FREQ_COLUMN], keep="first")
+    )
     freqs = ordered[S11_FREQ_COLUMN].to_numpy(dtype=np.float64)
     s11_values = ordered[S11_VALUE_COLUMN].to_numpy(dtype=np.float64)
     min_index = int(np.argmin(s11_values))
@@ -53,7 +57,11 @@ def build_s11_features(s11_group: pd.DataFrame) -> tuple[dict[str, float], np.nd
 
 
 def build_gain_features(gain_group: pd.DataFrame) -> tuple[dict[str, float], np.ndarray]:
-    ordered = gain_group.sort_values([GAIN_PHI_COLUMN, GAIN_THETA_COLUMN])
+    ordered = (
+        gain_group
+        .sort_values([GAIN_PHI_COLUMN, GAIN_THETA_COLUMN])
+        .drop_duplicates(subset=[GAIN_PHI_COLUMN, GAIN_THETA_COLUMN], keep="first")
+    )
     gain_values = ordered[GAIN_VALUE_COLUMN].to_numpy(dtype=np.float64)
     max_index = int(np.argmax(gain_values))
     mean_index = int(np.argmin(np.abs(gain_values - np.mean(gain_values))))
@@ -73,8 +81,10 @@ def main() -> None:
     args = parse_args()
     args.output_dir.mkdir(parents=True, exist_ok=True)
 
-    s11_df = pd.read_excel(args.s11_file)
-    gain_df = pd.read_excel(args.gain_file)
+    s11_files = args.s11_files or [Path("data1.xlsx")]
+    gain_files = args.gain_files or [Path("data2.xlsx")]
+    s11_df = pd.concat([pd.read_excel(path) for path in s11_files], ignore_index=True)
+    gain_df = pd.concat([pd.read_excel(path) for path in gain_files], ignore_index=True)
 
     s11_groups = {key: group for key, group in s11_df.groupby(DIMENSION_COLUMNS, sort=True)}
     gain_groups = {key: group for key, group in gain_df.groupby(DIMENSION_COLUMNS, sort=True)}
@@ -101,7 +111,8 @@ def main() -> None:
         if reference_freqs is None:
             reference_freqs = (
                 s11_groups[key]
-                .sort_values(S11_FREQ_COLUMN)[S11_FREQ_COLUMN]
+                .sort_values(S11_FREQ_COLUMN)
+                .drop_duplicates(subset=[S11_FREQ_COLUMN], keep="first")[S11_FREQ_COLUMN]
                 .to_numpy(dtype=np.float64)
             )
 
@@ -112,8 +123,8 @@ def main() -> None:
     np.save(args.output_dir / "s11_freqs_ghz.npy", reference_freqs)
 
     summary = {
-        "s11_file": str(args.s11_file),
-        "gain_file": str(args.gain_file),
+        "s11_files": [str(path) for path in s11_files],
+        "gain_files": [str(path) for path in gain_files],
         "sample_count": int(len(common_keys)),
         "dimension_columns": DIMENSION_COLUMNS,
         "s11_feature_columns": [
