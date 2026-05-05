@@ -24,6 +24,7 @@ def parse_args() -> argparse.Namespace:
 
 
 def run_command(args: list[str]) -> None:
+    """串行执行子脚本，保持一键流程简单直接。"""
     print("执行命令:", " ".join(args))
     subprocess.run(args, check=True)
 

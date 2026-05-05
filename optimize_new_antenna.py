@@ -7,7 +7,7 @@ import numpy as np
 import pandas as pd
 
 from antenna_ml.io import write_json
-from antenna_ml.model import load_model
+from antenna_ml.model import load_model_artifact
 from antenna_ml.new_antenna import (
     DIMENSION_COLUMNS,
     TARGET_COLUMNS,
@@ -16,6 +16,12 @@ from antenna_ml.new_antenna import (
     load_new_antenna_features,
     score_prediction,
     score_s11_prediction,
+)
+from antenna_ml.new_antenna_calibration import (
+    GainCalibration,
+    LocalBlendCalibration,
+    apply_gain_calibration,
+    apply_local_gain_blend,
 )
 from antenna_ml.new_antenna_plotting import S11_FEATURE_LABELS, plot_prediction_summary
 
@@ -147,7 +153,12 @@ def main() -> None:
     dataset = load_new_antenna_features(args.features_csv)
     lower_bounds, upper_bounds = dimension_bounds(dataset.dimensions)
     normalizer = build_objective_normalizer(dataset.dataframe, target_freq_ghz=args.target_freq_ghz)
-    model = load_model(args.model)
+    model_artifact = load_model_artifact(args.model)
+    model = model_artifact.model
+    gain_calibration = GainCalibration.from_dict(model_artifact.metadata.get("gain_calibration"))
+    local_blend_calibration = LocalBlendCalibration.from_dict(model_artifact.metadata.get("local_blend_calibration"))
+    reference_dimensions = np.asarray(model_artifact.metadata.get("reference_dimensions", dataset.dimensions), dtype=np.float64)
+    reference_targets = np.asarray(model_artifact.metadata.get("reference_targets", dataset.targets), dtype=np.float64)
 
     rng = np.random.default_rng(args.random_state)
     if args.objective_mode == "s11_composite":
@@ -172,7 +183,15 @@ def main() -> None:
         local_ratio=args.local_ratio,
         local_scale=args.local_scale,
     )
-    predictions = np.asarray(model.predict(candidates), dtype=np.float64)
+    raw_predictions = np.asarray(model.predict(candidates), dtype=np.float64)
+    predictions = apply_gain_calibration(raw_predictions, gain_calibration)
+    predictions = apply_local_gain_blend(
+        dimensions=candidates,
+        predictions=predictions,
+        reference_dimensions=reference_dimensions,
+        reference_targets=reference_targets,
+        calibration=local_blend_calibration,
+    )
     distance_penalties = nearest_seed_distance(candidates, seed_dimensions, upper_bounds - lower_bounds)
 
     if args.objective_mode == "s11_composite":
@@ -180,7 +199,17 @@ def main() -> None:
         baseline_prediction = None
         baseline_score = None
         if baseline_dimensions is not None:
-            baseline_prediction = np.asarray(model.predict(baseline_dimensions)[0], dtype=np.float64)
+            baseline_prediction = apply_gain_calibration(
+                np.asarray(model.predict(baseline_dimensions), dtype=np.float64),
+                gain_calibration,
+            )[0]
+            baseline_prediction = apply_local_gain_blend(
+                dimensions=baseline_dimensions,
+                predictions=baseline_prediction,
+                reference_dimensions=reference_dimensions,
+                reference_targets=reference_targets,
+                calibration=local_blend_calibration,
+            )
             baseline_score = float(
                 score_s11_prediction(
                     baseline_prediction,
@@ -275,8 +304,11 @@ def main() -> None:
         args.output,
         {
             "best_dimensions": best_dimensions,
+            "raw_predicted_targets": {name: float(value) for name, value in zip(TARGET_COLUMNS, raw_predictions[best_index])},
             "predicted_targets": {name: float(value) for name, value in zip(TARGET_COLUMNS, best_prediction)},
             "objective_score": best_score,
+            "gain_calibration": gain_calibration.to_dict(),
+            "local_blend_calibration": local_blend_calibration.to_dict(),
             "weights": {
                 "s11_weight": args.s11_weight,
                 "gain_weight": args.gain_weight,

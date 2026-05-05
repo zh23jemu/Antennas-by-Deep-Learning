@@ -27,6 +27,14 @@ class TrainingResult:
     y_pred: np.ndarray
 
 
+@dataclass(frozen=True)
+class ModelArtifact:
+    """统一保存模型及其附加信息，便于后续扩展校准器等后处理组件。"""
+
+    model: Any
+    metadata: dict[str, Any]
+
+
 def build_model(random_state: int, max_iter: int, sample_count: int) -> TransformedTargetRegressor:
     hidden_layer_sizes = (128, 128, 64)
     learning_rate_init = 1e-3
@@ -105,10 +113,40 @@ def train_model(
     )
 
 
-def save_model(model: Any, output_path: Path) -> None:
+def save_model(model: Any, output_path: Path, metadata: dict[str, Any] | None = None) -> None:
+    """保存模型。
+
+    这里兼容两种形态：
+    1. 仅保存模型本体，兼容项目里已有旧文件；
+    2. 保存 `model + metadata`，用于承载校准参数等附加信息。
+    """
     output_path.parent.mkdir(parents=True, exist_ok=True)
-    joblib.dump(model, output_path)
+    payload: Any = model
+    if metadata:
+        payload = {
+            "model": model,
+            "metadata": metadata,
+        }
+    joblib.dump(payload, output_path)
 
 
 def load_model(model_path: Path) -> Any:
-    return joblib.load(model_path)
+    payload = joblib.load(model_path)
+    if isinstance(payload, dict) and "model" in payload:
+        return payload["model"]
+    return payload
+
+
+def load_model_artifact(model_path: Path) -> ModelArtifact:
+    """读取模型及附加信息。
+
+    对旧版仅保存模型的文件，这里会自动补一个空 metadata，
+    这样旧结果仍然可以直接继续使用。
+    """
+    payload = joblib.load(model_path)
+    if isinstance(payload, dict) and "model" in payload:
+        metadata = payload.get("metadata", {})
+        if not isinstance(metadata, dict):
+            metadata = {}
+        return ModelArtifact(model=payload["model"], metadata=metadata)
+    return ModelArtifact(model=payload, metadata={})

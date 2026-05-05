@@ -2,6 +2,22 @@
   "model_path": "outputs\\new_antenna_model\\new_antenna_mlp.joblib",
   "input_csv": "three_cases_input.csv",
   "count": 3,
+  "gain_calibration": {
+    "gain_max_scale": 0.9933820236236748,
+    "gain_max_bias": 0.000817917565651649,
+    "gain_mean_scale": 0.9935936440683695,
+    "gain_mean_bias": 4.9015136045837957e-05,
+    "gain_std_scale": 0.9920677543095507,
+    "gain_std_bias": 1.9652628104641077e-05
+  },
+  "local_blend_calibration": {
+    "enabled": true,
+    "k_neighbors": 20,
+    "blend_weight": 0.82,
+    "gain_max_quantile": 0.35,
+    "gain_mean_quantile": 0.3,
+    "gain_std_quantile": 0.3
+  },
   "records": [
     {
       "label": "联合优化版",
@@ -13,14 +29,22 @@
       "h1 [mm]": 1.27523,
       "px [mm]": 90.9747,
       "py [mm]": 77.229,
+      "raw_s11_min_db": -29.140813385168737,
       "s11_min_db": -29.140813385168737,
+      "raw_s11_min_freq_ghz": 0.957460259005048,
       "s11_min_freq_ghz": 0.957460259005048,
+      "raw_s11_mean_db": -1.9371128924131804,
       "s11_mean_db": -1.9371128924131804,
+      "raw_s11_std_db": 3.9228283992116673,
       "s11_std_db": 3.9228283992116673,
+      "raw_s11_bandwidth_below_minus10_db_ghz": 0.016580560587130068,
       "s11_bandwidth_below_minus10_db_ghz": 0.016580560587130068,
-      "gain_max": 1.1315798614344894,
-      "gain_mean": 0.5463746958642184,
-      "gain_std": 0.32078168590443223
+      "raw_gain_max": 1.1315798614344894,
+      "gain_max": 0.7311441511970671,
+      "raw_gain_mean": 0.5463746958642184,
+      "gain_mean": 0.28289580133890135,
+      "raw_gain_std": 0.32078168590443223,
+      "gain_std": 0.1853080016543046
     },
     {
       "label": "真正S参数最优版",
@@ -32,14 +56,22 @@
       "h1 [mm]": 1.70934,
       "px [mm]": 77.6789,
       "py [mm]": 78.4607,
+      "raw_s11_min_db": -31.257221170160683,
       "s11_min_db": -31.257221170160683,
+      "raw_s11_min_freq_ghz": 0.9096747108726644,
       "s11_min_freq_ghz": 0.9096747108726644,
+      "raw_s11_mean_db": -2.0190292621128583,
       "s11_mean_db": -2.0190292621128583,
+      "raw_s11_std_db": 4.001225185221949,
       "s11_std_db": 4.001225185221949,
+      "raw_s11_bandwidth_below_minus10_db_ghz": 0.016277881914844347,
       "s11_bandwidth_below_minus10_db_ghz": 0.016277881914844347,
-      "gain_max": 1.0781911255624868,
-      "gain_mean": 0.31991215204779805,
-      "gain_std": 0.35797848235557594
+      "raw_gain_max": 1.0781911255624868,
+      "gain_max": 0.9370041410743202,
+      "raw_gain_mean": 0.31991215204779805,
+      "gain_mean": 0.24839891615934231,
+      "raw_gain_std": 0.35797848235557594,
+      "gain_std": 0.2836076917154511
     },
     {
       "label": "增益最优版",
@@ -51,14 +83,22 @@
       "h1 [mm]": 1.09338,
       "px [mm]": 79.1495,
       "py [mm]": 66.0772,
+      "raw_s11_min_db": -11.733451554896558,
       "s11_min_db": -11.733451554896558,
+      "raw_s11_min_freq_ghz": 1.02508697234919,
       "s11_min_freq_ghz": 1.02508697234919,
+      "raw_s11_mean_db": -1.2658193247202343,
       "s11_mean_db": -1.2658193247202343,
+      "raw_s11_std_db": 1.8871374399496967,
       "s11_std_db": 1.8871374399496967,
+      "raw_s11_bandwidth_below_minus10_db_ghz": 0.004598188958600196,
       "s11_bandwidth_below_minus10_db_ghz": 0.004598188958600196,
-      "gain_max": 1.3659501432465166,
-      "gain_mean": 0.7119677322396266,
-      "gain_std": 0.3951676797338427
+      "raw_gain_max": 1.3659501432465166,
+      "gain_max": 0.8988705246871079,
+      "raw_gain_mean": 0.7119677322396266,
+      "gain_mean": 0.4434001938447897,
+      "raw_gain_std": 0.3951676797338427,
+      "gain_std": 0.2486272656714978
     }
   ]
 }

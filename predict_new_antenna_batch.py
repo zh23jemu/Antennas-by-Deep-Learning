@@ -7,8 +7,14 @@ import numpy as np
 import pandas as pd
 
 from antenna_ml.io import write_json
-from antenna_ml.model import load_model
+from antenna_ml.model import load_model_artifact
 from antenna_ml.new_antenna import DIMENSION_COLUMNS, TARGET_COLUMNS
+from antenna_ml.new_antenna_calibration import (
+    GainCalibration,
+    LocalBlendCalibration,
+    apply_gain_calibration,
+    apply_local_gain_blend,
+)
 
 
 def parse_args() -> argparse.Namespace:
@@ -27,12 +33,26 @@ def main() -> None:
     if missing:
         raise ValueError(f"输入表缺少这些列: {missing}")
 
-    model = load_model(args.model)
+    model_artifact = load_model_artifact(args.model)
+    model = model_artifact.model
+    gain_calibration = GainCalibration.from_dict(model_artifact.metadata.get("gain_calibration"))
+    local_blend_calibration = LocalBlendCalibration.from_dict(model_artifact.metadata.get("local_blend_calibration"))
+    reference_dimensions = np.asarray(model_artifact.metadata.get("reference_dimensions", []), dtype=np.float64)
+    reference_targets = np.asarray(model_artifact.metadata.get("reference_targets", []), dtype=np.float64)
     dimensions = df[DIMENSION_COLUMNS].to_numpy(dtype=np.float64)
-    predictions = np.asarray(model.predict(dimensions), dtype=np.float64)
+    raw_predictions = np.asarray(model.predict(dimensions), dtype=np.float64)
+    predictions = apply_gain_calibration(raw_predictions, gain_calibration)
+    predictions = apply_local_gain_blend(
+        dimensions=dimensions,
+        predictions=predictions,
+        reference_dimensions=reference_dimensions,
+        reference_targets=reference_targets,
+        calibration=local_blend_calibration,
+    )
 
     result_df = df.copy()
     for index, column in enumerate(TARGET_COLUMNS):
+        result_df[f"raw_{column}"] = raw_predictions[:, index]
         result_df[column] = predictions[:, index]
 
     args.output_csv.parent.mkdir(parents=True, exist_ok=True)
@@ -43,6 +63,8 @@ def main() -> None:
             "model_path": str(args.model),
             "input_csv": str(args.input_csv),
             "count": int(result_df.shape[0]),
+            "gain_calibration": gain_calibration.to_dict(),
+            "local_blend_calibration": local_blend_calibration.to_dict(),
             "records": result_df.to_dict(orient="records"),
         },
     )

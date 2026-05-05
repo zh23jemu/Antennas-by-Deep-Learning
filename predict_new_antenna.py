@@ -6,8 +6,14 @@ from pathlib import Path
 import numpy as np
 
 from antenna_ml.io import write_json
-from antenna_ml.model import load_model
+from antenna_ml.model import load_model_artifact
 from antenna_ml.new_antenna import DIMENSION_COLUMNS, TARGET_COLUMNS
+from antenna_ml.new_antenna_calibration import (
+    GainCalibration,
+    LocalBlendCalibration,
+    apply_gain_calibration,
+    apply_local_gain_blend,
+)
 from antenna_ml.new_antenna_plotting import plot_prediction_summary
 
 
@@ -30,14 +36,30 @@ def parse_dimensions(raw: str) -> np.ndarray:
 def main() -> None:
     args = parse_args()
     dimensions = parse_dimensions(args.dimensions)
-    model = load_model(args.model)
-    prediction = np.asarray(model.predict(dimensions)[0], dtype=np.float64)
+    model_artifact = load_model_artifact(args.model)
+    model = model_artifact.model
+    gain_calibration = GainCalibration.from_dict(model_artifact.metadata.get("gain_calibration"))
+    local_blend_calibration = LocalBlendCalibration.from_dict(model_artifact.metadata.get("local_blend_calibration"))
+    reference_dimensions = np.asarray(model_artifact.metadata.get("reference_dimensions", []), dtype=np.float64)
+    reference_targets = np.asarray(model_artifact.metadata.get("reference_targets", []), dtype=np.float64)
+    raw_prediction = np.asarray(model.predict(dimensions), dtype=np.float64)
+    prediction = apply_gain_calibration(raw_prediction, gain_calibration)[0]
+    prediction = apply_local_gain_blend(
+        dimensions=dimensions,
+        predictions=prediction,
+        reference_dimensions=reference_dimensions,
+        reference_targets=reference_targets,
+        calibration=local_blend_calibration,
+    )
 
     write_json(
         args.output,
         {
             "dimensions": {name: float(value) for name, value in zip(DIMENSION_COLUMNS, dimensions[0])},
+            "raw_predicted_targets": {name: float(value) for name, value in zip(TARGET_COLUMNS, raw_prediction[0])},
             "predicted_targets": {name: float(value) for name, value in zip(TARGET_COLUMNS, prediction)},
+            "gain_calibration": gain_calibration.to_dict(),
+            "local_blend_calibration": local_blend_calibration.to_dict(),
         },
     )
     plot_prediction_summary(prediction, args.plot, "Predicted New Antenna Features")

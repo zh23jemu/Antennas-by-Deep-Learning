@@ -7,6 +7,13 @@ import numpy as np
 
 from antenna_ml.io import write_json
 from antenna_ml.model import save_model, train_model
+from antenna_ml.new_antenna_calibration import (
+    apply_gain_calibration,
+    apply_local_gain_blend,
+    fit_gain_calibration,
+    LocalBlendCalibration,
+    summarize_gain_calibration,
+)
 from antenna_ml.new_antenna import DIMENSION_COLUMNS, TARGET_COLUMNS, dimension_bounds, load_new_antenna_features
 from antenna_ml.new_antenna_plotting import plot_feature_comparison
 
@@ -32,10 +39,37 @@ def main() -> None:
         max_iter=args.max_iter,
         test_size=args.test_size,
     )
+    gain_calibration = fit_gain_calibration(result.y_valid, result.y_pred, shrink=0.6)
+    local_blend_calibration = LocalBlendCalibration(
+        enabled=True,
+        k_neighbors=20,
+        blend_weight=0.88,
+        gain_max_quantile=0.30,
+        gain_mean_quantile=0.25,
+        gain_std_quantile=0.25,
+    )
+    calibrated_y_pred = apply_gain_calibration(result.y_pred, gain_calibration)
+    calibrated_y_pred = apply_local_gain_blend(
+        dimensions=result.x_valid,
+        predictions=calibrated_y_pred,
+        reference_dimensions=dataset.dimensions,
+        reference_targets=dataset.targets,
+        calibration=local_blend_calibration,
+    )
+    gain_calibration_summary = summarize_gain_calibration(result.y_valid, result.y_pred, calibrated_y_pred)
 
     args.output_dir.mkdir(parents=True, exist_ok=True)
     model_path = args.output_dir / "new_antenna_mlp.joblib"
-    save_model(result.model, model_path)
+    save_model(
+        result.model,
+        model_path,
+        metadata={
+            "gain_calibration": gain_calibration.to_dict(),
+            "local_blend_calibration": local_blend_calibration.to_dict(),
+            "reference_dimensions": dataset.dimensions,
+            "reference_targets": dataset.targets,
+        },
+    )
     lower_bounds, upper_bounds = dimension_bounds(dataset.dimensions)
 
     compare_dir = args.output_dir / "validation_plots"
@@ -46,7 +80,7 @@ def main() -> None:
         plot_path = compare_dir / f"validation_compare_{plot_number}.png"
         plot_feature_comparison(
             true_values=result.y_valid[sample_index],
-            predicted_values=result.y_pred[sample_index],
+            predicted_values=calibrated_y_pred[sample_index],
             output_path=plot_path,
             title=f"New Antenna Validation Sample {plot_number}",
         )
@@ -56,7 +90,8 @@ def main() -> None:
                 "plot_path": str(plot_path),
                 "dimensions": result.x_valid[sample_index],
                 "true_targets": result.y_valid[sample_index],
-                "predicted_targets": result.y_pred[sample_index],
+                "raw_predicted_targets": result.y_pred[sample_index],
+                "predicted_targets": calibrated_y_pred[sample_index],
             }
         )
 
@@ -73,6 +108,9 @@ def main() -> None:
             "x_valid_shape": result.x_valid_shape,
             "y_valid_shape": result.y_valid_shape,
             "metrics": result.metrics,
+            "gain_calibration": gain_calibration.to_dict(),
+            "local_blend_calibration": local_blend_calibration.to_dict(),
+            "gain_calibration_metrics": gain_calibration_summary,
             "parameter_lower_bounds": lower_bounds,
             "parameter_upper_bounds": upper_bounds,
             "validation_compare_plots": compare_records,
